@@ -5,5 +5,5 @@ Find largest path moving only through holes and show the schema of the largest p
 ```sh
 cmake .
 make
-./labyrinth map.txt
+./labyrinth input.txt
 ```
