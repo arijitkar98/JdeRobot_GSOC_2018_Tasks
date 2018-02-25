@@ -1,0 +1,3 @@
+import gameOfLife
+
+gameOfLife.main("settings.json")
