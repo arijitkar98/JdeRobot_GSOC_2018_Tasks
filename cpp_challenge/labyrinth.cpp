@@ -1,7 +1,7 @@
 /*
-			JdeRobot GSOC 2018
-			C++ Programming Task
-			Submitted By - Arijit Kar (arijitkar98)
+            JdeRobot GSOC 2018
+            C++ Programming Task
+            Submitted By - Arijit Kar (arijitkar98)
 */
 
 #include <fstream>
@@ -12,92 +12,99 @@
 
 using namespace std;
 
-void depthFirstSearch(int x, int y, vector<string> &labyrinth, vector<vector<bool> > &visited1, int &currentLen)
+int checkCoordinates( int i, int j, vector<string> labyrinth)
 {
-    for(int i = -1; i < 2; i++) 
-    {
-    	for(int j = -1; j < 2; j++)
-    	{
-    		if(abs(i) + abs(j) == 1)
-    		{
-        		int x1 = x + i;
-        		int y1 = y + j;
-        		if(x1 >= 0 && x1 < labyrinth.size() && y1 >=0  && y1 < labyrinth[0].size() && labyrinth[x1][y1] == '.' && visited1[x1][y1] == false) 
-        		{
-            		visited1[x1][y1] = true;
-            		currentLen = currentLen + 1;
-            		depthFirstSearch(x1, y1, labyrinth, visited1, currentLen);
-        		}
-        	}
-        }
-    }
+    if(i < 0 || j < 0 || i >= labyrinth.size() || j >= labyrinth[0].size())
+        return 0;
+    return 1;
 }
 
-void finalDFS(int x, int y, vector<string> &labyrinth, vector<vector<bool> > &visited1, int &currentLen)
+void depthFirstSearch(int x, int y, vector<string> labyrinth, vector<vector<bool> > &visited, vector<string> &pathLabyrinth, int &currentLen)
 {
-    labyrinth[x][y] = currentLen + '0';
+    visited[x][y] = 1;
 
-    for(int i = -1; i < 2; i++) 
+    int maxLen = 0;
+
+    vector<vector<vector<bool> > > tempVisited;
+    vector<vector<string> > tempPathLabyrinth;
+
+    for(int i=0;i<4;i++)
     {
-        for(int j = -1; j < 2; j++)
+        tempVisited.push_back(visited);
+        tempPathLabyrinth.push_back(pathLabyrinth);
+    }
+
+    int dirX[] = {-1, 0, 1, 0};
+    int dirY[] = { 0,-1, 0, 1};
+
+    for(int i = 0; i < 4; i++)
+    {
+        int newX = x + dirX[i];
+        int newY = y + dirY[i];
+
+        if(checkCoordinates(newX, newY, labyrinth))
         {
-            if(abs(i) + abs(j) == 1)
+            if(visited[newX][newY] == 0)
             {
-                int x1 = x + i;
-                int y1 = y + j;
-                if(x1 >= 0 && x1 < labyrinth.size() && y1 >=0  && y1 < labyrinth[0].size() && labyrinth[x1][y1] == '.' && visited1[x1][y1] == false) 
+                int tempLen = 0;    
+                depthFirstSearch(newX, newY, labyrinth, tempVisited[i], tempPathLabyrinth[i], tempLen);
+            
+                if(tempLen > maxLen)
                 {
-                    visited1[x1][y1] = true;
-                    currentLen = currentLen + 1;
-                    finalDFS(x1, y1, labyrinth, visited1, currentLen);
+                    pathLabyrinth = tempPathLabyrinth[i];
+                    visited = tempVisited[i];
+                    maxLen = tempLen;
                 }
             }
         }
     }
+    
+    pathLabyrinth[x][y] = maxLen + '0';
+    currentLen = ++maxLen;
 }
 
-void findLargestPath(int rows, int cols, vector<string> &inputLabyrinth, vector<string> &outputLabyrinth, vector<vector<bool> > &visited1, vector<vector<bool> > &visited2)
+void findLargestPath(vector<string> &inputLabyrinth, vector<vector<bool> > &visited)
 {
     int maxLen = 0;
-    int currentLen;
-    int startX, startY;
-    for(int i = 0; i < rows; i++) 
-    {
-        for( int j = 0; j < cols; j++) 
-        {
-            if(inputLabyrinth[i][j] != '#' && visited1[i][j] == false)
-            {
-                currentLen = 1;
-                visited1[i][j] = true;
-                depthFirstSearch(i ,j, inputLabyrinth, visited1, currentLen);
+    vector<string> finalPathLabyrinth;
+    vector<vector<bool> > finalVisited = visited;
 
-                if(currentLen > maxLen) 
+    for(int i = 0; i < inputLabyrinth.size(); i++)
+    {
+        for(int j = 0; j < inputLabyrinth[0].size(); j++)
+        {
+            if(!visited[i][j])
+            {
+                vector<string> tempPathLabyrinth = inputLabyrinth;
+                vector<vector<bool> > tempVisited = visited;
+                int currentLen = 0;
+
+                depthFirstSearch(i, j, inputLabyrinth, tempVisited, tempPathLabyrinth, currentLen);
+
+                if(currentLen > maxLen)
                 {
+                    finalPathLabyrinth = tempPathLabyrinth;
                     maxLen = currentLen;
-                    startX = i;
-                    startY = j;
+                    finalVisited = tempVisited;
                 }
             }
         }
     }
 
-    currentLen = 1;
-    visited2[startX][startY] = true;
-    finalDFS(startX, startY, outputLabyrinth, visited2, currentLen);
+    cout << maxLen << endl;
 
-    cout << currentLen << endl;
-    for(int i = 0; i < rows; i++) 
+    for(int i = 0; i < inputLabyrinth.size(); i++) 
     {
-        for(int j = 0; j < cols; j++) 
+        for(int j = 0; j < inputLabyrinth[0].size(); j++) 
         {
-        	if(outputLabyrinth[i][j] == '#')
-        		cout << "# ";
-        	else if(outputLabyrinth[i][j] == '.')
-        		cout << ". ";
-        	else
-        	{
-            	cout<<(static_cast<int>(outputLabyrinth[i][j]) - 49)<<' ';
-        	}
+            if(finalPathLabyrinth[i][j] == '#')
+                cout << "# ";
+            else if(finalPathLabyrinth[i][j] == '.')
+                cout << ". ";
+            else
+            {
+                cout<<(static_cast<int>(finalPathLabyrinth[i][j]) - 48)<<' ';
+            }
         }
         cout<<endl;
     }
@@ -105,36 +112,31 @@ void findLargestPath(int rows, int cols, vector<string> &inputLabyrinth, vector<
 
 int main(int argc, char* argv[])
 {
-	ifstream file(argv[1]);	
-	string a;
-	vector<string> matrix;
-	while(getline(file,a))
-	{
-		matrix.push_back(a);
-	}
-	vector<string> inputLabyrinth(matrix);
-
-	vector<string> outputLabyrinth = inputLabyrinth;
-
-    int rows = inputLabyrinth.size();
-    int cols = inputLabyrinth[0].size();
-
-    vector<vector<bool> > visited1,visited2;
-
-    for(int i = 0; i < rows; i++)
+    ifstream file(argv[1]); 
+    string a;
+    vector<string> matrix;
+    while(getline(file,a))
     {
-        vector<bool> row;
-        visited1.push_back(row);
-        visited2.push_back(row);
-
-        for(int j = 0; j < cols; j++)
-        {
-            visited1[i].push_back(false);
-            visited2[i].push_back(false);
-        }
+        matrix.push_back(a);
     }
+    vector<string> inputLabyrinth(matrix);
 
-    findLargestPath(rows,cols,inputLabyrinth,outputLabyrinth,visited1,visited2);
+	vector<vector<bool> > visited;
+
+	for(int i = 0; i < inputLabyrinth.size(); i++)
+	{
+		vector<bool> row;
+		for(int j=0; j < inputLabyrinth[0].size(); j++)
+		{
+			if(inputLabyrinth[i][j] == '.')
+				row.push_back(0);
+			else row.push_back(1);
+		}
+		visited.push_back(row);
+	}
+
+    findLargestPath(inputLabyrinth, visited);
 
 	return 0;
 }
+
